@@ -218,11 +218,23 @@
     font-weight: 700;
     margin-bottom: 24px;
   }
-  .result-desc {
-    font-size: 1rem;
+  .result-experience {
+    font-size: 0.9375rem;
+    line-height: 1.9;
+    color: #4a4a4a;
+    text-align: left;
+    background: #ffffff;
+    border-left: 3px solid #e0d8c6;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+  }
+  .result-comfort {
+    font-size: 0.9375rem;
     line-height: 1.9;
     color: #3c3c3c;
-    margin-bottom: 20px;
+    text-align: left;
+    margin-bottom: 24px;
   }
   .result-closer {
     font-size: 0.875rem; /* 稍小字号 */
@@ -277,7 +289,8 @@
     <div class="result">
       <div class="result-badge">人物 · 时刻 · 情绪坐标</div>
       <h2 id="result-title" class="result-title"></h2>
-      <p id="result-desc" class="result-desc"></p>
+      <p id="result-experience" class="result-experience"></p>
+      <p id="result-comfort" class="result-comfort"></p>
       <p class="result-closer">你最近咽下去的那句话是什么？</p>
       <div class="result-bottom">
         <button id="btn-retry" class="btn btn-ghost" type="button">再测一次</button>
@@ -418,37 +431,97 @@
     '等待时机'
   ];
 
-  // 18 个结果：results[维度][挡位]，挡位 high=高 / mid=中 / low=低
+  // 18 个结果，按“维度顺序 × 挡位（高/中/低）”平铺存储，下标 = 维度 × 3 + 挡位。
   const results = [
-    { // 隐忍蓄力
-      high: { title: '少年嬴政 · 邯郸为质 · 屈辱下的沉默蓄力', desc: '他学会了不抬头。' },
-      mid:  { title: '少年韩信 · 胯下之辱 · 愤怒被更大的目标压住', desc: '他从人胯下爬过去，没说话。' },
-      low:  { title: '少年刘秀 · 兄长遇害后的沉默', desc: '他哭完，把事压在心里。' }
+    { // 隐忍蓄力 · 高
+      title: '少年嬴政 · 邯郸为质 · 屈辱下的沉默蓄力',
+      experience: `十三岁在邯郸，街上有人故意让我听见那些话。我没回头，也没加快脚步。回到住处，手是攥着的，脸上什么都没有。`,
+      comfort: `你咽下去那句话的时候，大概也是这个姿势吧。咽了就咽了，不代表你怂，只是你知道现在说出来，接不住的人比能接住的人多。先这样，不丢人。`
     },
-    { // 愤怒未发
-      high: { title: '少年项羽 · 见始皇出游 · 那句话被叔父捂了回去', desc: '他被叔父捂住嘴，那句话咽了回去。' },
-      mid:  { title: '少年张良 · 博浪沙之后 · 锤子砸偏了，他开始等', desc: '锤子砸偏了，他开始等。' },
-      low:  { title: '少年荆轲 · 与人论剑不争 · 别人骂他，他转身走了', desc: '别人骂他，他转身走了。' }
+    { // 隐忍蓄力 · 中
+      title: '少年韩信 · 胯下之辱 · 愤怒被更大的目标压住',
+      experience: `那个人叉开腿站在市集中间，让我从他胯下过去。周围有人停下来看。我低头爬了。站起来的时候，我拍了拍衣服，没看他们。`,
+      comfort: `你心里那团火没烧完，不是熄了，是你自己按住的。按着它挺累的，我知道。但你没有必要现在烧给谁看，你还有别的地方要去。`
     },
-    { // 不确定外走
-      high: { title: '少年苏轼 · 首次出川 · 兴奋里藏着不确定', desc: '船越走越远，他高兴，也有点没底。' },
-      mid:  { title: '少年李白 · 初出蜀地 · 带着剑和钱，不知道前面是什么', desc: '他带着剑和钱，不知道前面是什么。' },
-      low:  { title: '少年杜甫 · 漫游齐赵之间 · 还没想好要去哪', desc: '他还没想好要去哪。' }
+    { // 隐忍蓄力 · 低
+      title: '少年刘秀 · 兄长遇害后的沉默',
+      experience: `我哥出事以后，我照常吃饭，照常见人。有人来试探我，我就点头，说些不痛不痒的话。夜里一个人坐着的时候，才觉得屋子太安静。`,
+      comfort: `你也有先把日子过下去、把难过往后放的时候吧。那不是冷血，是你当时只能这样。等你能哭的时候再哭，没人催你。`
     },
-    { // 格格不入
-      high: { title: '少年嵇康 · 不随流俗 · 不打算跟别人一样', desc: '他不打算跟别人一样。' },
-      mid:  { title: '少年李清照 · 初入汴京 · 写的东西和周围人不太一样', desc: '她写的东西，和周围人不太一样。' },
-      low:  { title: '少年贾谊 · 才高遭忌 · 太早被看见，还不知道怎么收', desc: '他太早被看见，还不知道怎么收。' }
+    { // 愤怒未发 · 高
+      title: '少年项羽 · 见始皇出游 · 那句话被叔父捂了回去',
+      experience: `秦始皇的车队过去，人群里很挤。我说了一句"彼可取而代也"。话没落音，叔父的手就捂上来了，把我往后拽。我挣了一下，没再说话。`,
+      comfort: `你心里那句话可能也没说完。被捂住的时候很难受，但不代表你说错了。有些话就是要等一个能说完的地方，你先不用怪自己当时没喊出来。`
     },
-    { // 告别失去
-      high: { title: '少年纳兰 · 丧妻之后 · 写了很多词，但人回不来', desc: '他写了很多词，但人回不来。' },
-      mid:  { title: '少年曹植 · 与友离散 · 酒还在，人散了', desc: '酒还在，人散了。' },
-      low:  { title: '少年陆游 · 沈园旧事之前 · 还没写下那首词', desc: '他还没写下那首词。' }
+    { // 愤怒未发 · 中
+      title: '少年张良 · 博浪沙之后 · 锤子砸偏了，他开始等',
+      experience: `锤子砸下去，车没中。我转身就跑，跑的时候听见后面乱起来。后来我改了名字，躲了很久。再后来，我不急了。`,
+      comfort: `你也有使了很大劲、结果砸偏的时候吧。砸偏不等于你不行，只是那一下不是对的地方。先躲一躲，等下一次，不丢人。`
     },
-    { // 等待时机
-      high: { title: '少年诸葛亮 · 隆中躬耕 · 在地里等一个能接住他的人', desc: '他在地里等，等一个能接住他的人。' },
-      mid:  { title: '少年谢安 · 东山不出 · 别人请他做官，他还在看', desc: '别人请他做官，他还在看。' },
-      low:  { title: '少年王猛 · 卖畚箕于市 · 在市集上等一个识货的', desc: '他在市集上卖畚箕，等一个识货的。' }
+    { // 愤怒未发 · 低
+      title: '少年荆轲 · 与人论剑不争 · 别人骂他，他转身走了',
+      experience: `有人跟我论剑，说着说着开始骂。我看了他一会儿，没拔剑，转身走了。他在后面还在说，我没回头。`,
+      comfort: `你也有不想争的时候吧。别人可能觉得你退了，但你自己知道，只是不想把力气花在这。不争就不争了，不用跟谁解释。`
+    },
+    { // 不确定外走 · 高
+      title: '少年苏轼 · 首次出川 · 兴奋里藏着不确定',
+      experience: `二十岁，船出了眉山，越走越远。白天看两岸的山，晚上停在江边，听见水声。我高兴，但躺下的时候，也会想前面到底是什么。`,
+      comfort: `往外走的人，高兴里都会掺一点没底。不是你想多了，是你脚下的地方还没踩实。先走一段，踩实了就不慌了。`
+    },
+    { // 不确定外走 · 中
+      title: '少年李白 · 初出蜀地 · 带着剑和钱，不知道前面是什么',
+      experience: `我带着剑，也带着一些钱，出了蜀地。在江陵上岸的时候，钱袋还沉，前面的人我一个也不认识。我不知道钱花完了会怎样，但我不想回头。`,
+      comfort: `你也有带着一点东西就上路的时候吧。心里没底，不代表你走错了，只是你还没走到能看清的地方。先走，路会慢慢显出来。`
+    },
+    { // 不确定外走 · 低
+      title: '少年杜甫 · 漫游齐赵之间 · 还没想好要去哪',
+      experience: `我在齐赵之间漫游，骑马看山，天黑就找地方住。有人问我要去哪，我说还没想好。第二天醒来，还是接着走。`,
+      comfort: `还没想好要去哪的时候，看也是一种走法。别人赶路是别人的事，你不用因为别人快，就随便给自己定一个方向。`
+    },
+    { // 格格不入 · 高
+      title: '少年嵇康 · 不随流俗 · 不打算跟别人一样',
+      experience: `洛阳城外，我在树下打铁。有人过来跟我说话，说现在大家都这样那样，你怎么不。我继续打我的铁，没接他的话。`,
+      comfort: `跟周围不一样，不一定是你有问题。可能只是你不想把自己塞进一个不合身的形状里。先不用急着改，不合身就是不合身。`
+    },
+    { // 格格不入 · 中
+      title: '少年李清照 · 初入汴京 · 写的东西和周围人不太一样',
+      experience: `刚到汴京，我写了几首词，拿给周围的人看。他们客客气气地说好，又说了些别的。我把稿子收起来，没再拿出来。`,
+      comfort: `自己喜欢的东西，不用因为别人多看了你一眼就丢掉。收起来可以，但别扔。哪天遇到看得懂的人，再拿出来也不迟。`
+    },
+    { // 格格不入 · 低
+      title: '少年贾谊 · 才高遭忌 · 太早被看见，还不知道怎么收',
+      experience: `二十出头，我被召到朝廷，话说得很直。有人点头，有人皱眉。我那时候没看出来，后来才知道，有些话不是说得对就够了。`,
+      comfort: `太早被看见，不是你的错。你只是还没学会怎么把自己收一点。以后会学会的，现在不用责怪那个太早发光的自己。`
+    },
+    { // 告别失去 · 高
+      title: '少年纳兰 · 丧妻之后 · 写了很多词，但人回不来',
+      experience: `她走了以后，我写了很多词。灯下写完，纸上都是字，屋子里还是只有我。我知道写再多她也不会回来，但我还是写。`,
+      comfort: `怎么写都留不住一个人的时候，写本身也不是没用。留着就留着，想翻就翻。等它自己慢慢变轻，不用急着把谁从心里删掉。`
+    },
+    { // 告别失去 · 中
+      title: '少年曹植 · 与友离散 · 酒还在，人散了',
+      experience: `以前我们一起喝酒，杯子碰得很响。后来人一个个走了。酒还在，杯子还在，位置空着。我有时候倒酒，倒到一半才想起来。`,
+      comfort: `东西还在，人已经不在了，想起来会难受。但想起来也说明那些日子真的有过。你不用假装自己已经不在意。`
+    },
+    { // 告别失去 · 低
+      title: '少年陆游 · 沈园旧事之前 · 还没写下那首词',
+      experience: `那时候春天，沈园的花开着，她还在。我们说话，她笑了一下。我不知道后来会那么久都忘不掉，也不知道那天之后会变成那样。`,
+      comfort: `还在一起、却已经开始担心失去的时候，不用提前难过。先把眼前这个人、这段日子过好。以后的事，以后再说。`
+    },
+    { // 等待时机 · 高
+      title: '少年诸葛亮 · 隆中躬耕 · 在地里等一个能接住他的人',
+      experience: `我在隆中种地，读书，偶尔和朋友说说话。他们走了，我接着锄地。有人劝我出去，我没动。我在等一个能接住我的人，等不到，也可以继续种。`,
+      comfort: `等不是什么都不做。你只是不想把自己交给一个不对的地方。先等一等也可以，地里的活又不会跑。`
+    },
+    { // 等待时机 · 中
+      title: '少年谢安 · 东山不出 · 别人请他做官，他还在看',
+      experience: `有人来东山请我做官。我没有马上答应，带他们看山，看水。他们着急，我不急。我不是不想做事，我只是还在看。`,
+      comfort: `别人催你往前，你却还想再看一看，这不算拖延。你只是不想因为别人着急，就随便把自己交出去。再看一会儿也可以。`
+    },
+    { // 等待时机 · 低
+      title: '少年王猛 · 卖畚箕于市 · 在市集上等一个识货的',
+      experience: `我在市集上卖畚箕。人来人往，很少有人停下来。我不吆喝，也不急。我知道自己不是只能卖畚箕，只是还没遇到那个识货的人。`,
+      comfort: `被放在一个不对的位置上，不代表你只有这点东西。没被看见的时候，先把手里的事做好。等那个停下来的人，他会停的。`
     }
   ];
 
@@ -466,7 +539,8 @@
   const backBtn = document.getElementById('btn-back');
   const resultActionEl = document.getElementById('result-action');
   const resultTitleEl = document.getElementById('result-title');
-  const resultDescEl = document.getElementById('result-desc');
+  const resultExperienceEl = document.getElementById('result-experience');
+  const resultComfortEl = document.getElementById('result-comfort');
 
   // 切换屏幕
   function showScreen(screen) {
@@ -581,14 +655,17 @@
       tier = 'low';
     }
 
-    return results[bestDim][tier];
+    // 挡位转下标：high=0、mid=1、low=2；结果按 维度×3 + 挡位 平铺存储
+    const tierIndex = { high: 0, mid: 1, low: 2 };
+    return results[bestDim * 3 + tierIndex[tier]];
   }
 
   // 展示结果页
   function showResult() {
     const result = computeResult();
     resultTitleEl.textContent = result.title;
-    resultDescEl.textContent = result.desc;
+    resultExperienceEl.textContent = result.experience;
+    resultComfortEl.textContent = result.comfort;
     showScreen('result');
   }
 
