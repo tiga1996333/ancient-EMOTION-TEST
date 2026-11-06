@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>你此刻像哪个少年古人</title>
+<style>
+  /* 基础重置与全局样式 */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-size: 16px; /* 基础字号 16px */
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f6f4ef; /* 浅色纯色背景 */
+    color: #2b2b2b; /* 深色文字 */
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* 移动端优先：内容容器最大宽度 640px 居中 */
+  .app {
+    width: 100%;
+    max-width: 640px;
+    min-height: 100vh;
+    padding: 24px 20px 32px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 屏幕切换控制 */
+  .screen {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+  }
+  .screen.active {
+    display: flex;
+  }
+
+  /* 首屏 */
+  .hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 24px 0;
+  }
+  .hero h1 {
+    font-size: 2rem;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+    margin-bottom: 12px;
+  }
+  .hero .subtitle {
+    font-size: 1rem;
+    color: #6b6b6b;
+    margin-bottom: 32px;
+  }
+  .pay-hint {
+    /* 首屏必须清晰可见的付费提示，不藏在按钮后 */
+    font-size: 0.875rem;
+    color: #8a6d3b;
+    background: #fbf5e6;
+    border: 1px solid #e8dcc0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  /* 按钮通用 */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px; /* 触控区域不小于 44px */
+    padding: 12px 28px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.08s ease, opacity 0.15s ease;
+  }
+  .btn:active {
+    transform: scale(0.98);
+  }
+  .btn-primary {
+    background: #3a3a3a;
+    color: #ffffff;
+    width: 100%;
+    max-width: 320px;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: #6b6b6b;
+    border: 1px solid #d8d3c8;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  /* 题目区域 */
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    min-height: 44px;
+  }
+  .back-btn {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #6b6b6b;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    border-radius: 8px;
+  }
+  .back-btn:disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .progress {
+    font-size: 0.8125rem;
+    color: #9a9a9a;
+    letter-spacing: 0.05em;
+  }
+
+  .question-text {
+    font-size: 1.375rem;
+    line-height: 1.5;
+    font-weight: 600;
+    margin-bottom: 28px;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    min-height: 56px; /* 触控区域不小于 44px */
+    padding: 14px 16px;
+    font-size: 1rem;
+    line-height: 1.5;
+    background: #ffffff;
+    color: #2b2b2b;
+    border: 1.5px solid #e2ddd1;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .option .mark {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: #f0ede6;
+    border-radius: 50%;
+    color: #6b6b6b;
+  }
+  .option.selected {
+    border-color: #3a3a3a;
+    background: #f3f1ea;
+  }
+  .option.selected .mark {
+    background: #3a3a3a;
+    color: #ffffff;
+  }
+
+  .result-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* 结果页 */
+  .result {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 16px 0;
+  }
+  .result-badge {
+    font-size: 0.8125rem;
+    letter-spacing: 0.2em;
+    color: #8a6d3b;
+    margin-bottom: 18px;
+  }
+  .result-title {
+    font-size: 1.5rem;
+    line-height: 1.5;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  .result-desc {
+    font-size: 1rem;
+    line-height: 1.9;
+    color: #3c3c3c;
+    text-align: left;
+    margin-bottom: 20px;
+  }
+  .result-closer {
+    font-size: 0.875rem; /* 稍小字号 */
+    color: #6b6b6b;
+    margin-bottom: 40px;
+  }
+  .result-bottom {
+    margin-top: auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .disclaimer {
+    font-size: 0.6875rem; /* 最小字号 */
+    color: #a5a5a5;
+    line-height: 1.5;
+    max-width: 320px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 首屏 -->
+  <section id="screen-start" class="screen active">
+    <div class="hero">
+      <h1>你此刻像哪个少年古人</h1>
+      <p class="subtitle">3 道题，30 秒</p>
+      <!-- 付费提示：首屏清晰可见，不藏在按钮后 -->
+      <p class="pay-hint">本测试结果需支付 0.99 元解锁。付款后自动获得测试链接。</p>
+      <button id="btn-start" class="btn btn-primary" type="button">开始测试</button>
+    </div>
+  </section>
+
+  <!-- 答题屏 -->
+  <section id="screen-quiz" class="screen">
+    <div class="quiz-header">
+      <button id="btn-back" class="back-btn" type="button" aria-label="返回上一题">← 上一题</button>
+      <span id="progress" class="progress">1 / 3</span>
+    </div>
+    <h2 id="question-text" class="question-text"></h2>
+    <div id="options" class="options"></div>
+    <div id="result-action" class="result-action" hidden>
+      <button id="btn-result" class="btn btn-primary" type="button">查看结果</button>
+    </div>
+  </section>
+
+  <!-- 结果屏 -->
+  <section id="screen-result" class="screen">
+    <div class="result">
+      <div class="result-badge">人物 · 时刻 · 情绪坐标</div>
+      <h2 id="result-title" class="result-title"></h2>
+      <p id="result-desc" class="result-desc"></p>
+      <p class="result-closer">你最近咽下去的那句话是什么？</p>
+      <div class="result-bottom">
+        <button id="btn-retry" class="btn btn-ghost" type="button">再测一次</button>
+        <p class="disclaimer">本测试为情绪趣味探索，不构成心理诊断或医疗建议。</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // 三道题目的数据
+  const questions = [
+    {
+      text: '最近一次你咽下一句话没说出来，是因为什么？',
+      options: [
+        { key: 'A', label: '怕说出来后果更糟' },
+        { key: 'B', label: '觉得说了也没用' },
+        { key: 'C', label: '在等一个说了有用的时机' }
+      ]
+    },
+    {
+      text: '你手机里最近一条写了又删的消息，更接近哪一种？',
+      options: [
+        { key: 'A', label: '一句质问' },
+        { key: 'B', label: '一句试探' },
+        { key: 'C', label: '一句告别' }
+      ]
+    },
+    {
+      text: '如果此刻的情绪有形状，它更像什么？',
+      options: [
+        { key: 'A', label: '压在胸口的石头' },
+        { key: 'B', label: '烧到一半的火' },
+        { key: 'C', label: '关不紧的水龙头' }
+      ]
+    }
+  ];
+
+  // 三个结果文案（原样使用，不改写）
+  const results = {
+    1: {
+      title: '少年嬴政 · 邯郸为质 · 屈辱下的沉默蓄力',
+      desc: '十三岁在邯郸，嬴政还不是后来的秦始皇。有人故意让他听见那些话，他学会了不抬头。你最近咽下去的那句话，大概也不轻。咽下去不代表没事，只是你知道，现在说出来，接不住的人比能接住的人多。'
+    },
+    2: {
+      title: '少年韩信 · 胯下之辱 · 愤怒被更大的目标压住',
+      desc: '韩信从那个人胯下爬过去的时候，旁边的人在笑。他后来再没提过这件事。你心里那团火没烧完，可能不是熄了，是你自己按住的。按住它挺累的，累就累吧，有些人就是这样往前走了一段。'
+    },
+    3: {
+      title: '少年苏轼 · 首次出川 · 兴奋里藏着不确定',
+      desc: '苏轼二十岁出眉山，船越走越远，他大概是高兴的，但高兴里也有点没底。你手机里那条写了又删的消息，不一定是多大的事，但就是一直搁在那儿。搁着就搁着，不用急着删，也不用急着发。'
+    }
+  };
+
+  // 状态管理：用一个对象保存三道题的答案，支持返回修改后重新计算
+  const answers = {
+    1: null,
+    2: null,
+    3: null
+  };
+  let currentQuestion = 0; // 当前题目索引（0~2）
+
+  // 获取 DOM 元素
+  const screenStart = document.getElementById('screen-start');
+  const screenQuiz = document.getElementById('screen-quiz');
+  const screenResult = document.getElementById('screen-result');
+  const questionTextEl = document.getElementById('question-text');
+  const optionsEl = document.getElementById('options');
+  const progressEl = document.getElementById('progress');
+  const backBtn = document.getElementById('btn-back');
+  const resultActionEl = document.getElementById('result-action');
+  const resultTitleEl = document.getElementById('result-title');
+  const resultDescEl = document.getElementById('result-desc');
+
+  // 切换屏幕
+  function showScreen(screen) {
+    screenStart.classList.toggle('active', screen === 'start');
+    screenQuiz.classList.toggle('active', screen === 'quiz');
+    screenResult.classList.toggle('active', screen === 'result');
+  }
+
+  // 渲染当前题目
+  function renderQuestion() {
+    const question = questions[currentQuestion];
+    questionTextEl.textContent = question.text;
+    progressEl.textContent = (currentQuestion + 1) + ' / 3';
+
+    // 渲染选项
+    optionsEl.innerHTML = '';
+    question.options.forEach(function (option) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'option';
+      button.dataset.key = option.key;
+
+      const mark = document.createElement('span');
+      mark.className = 'mark';
+      mark.textContent = option.key;
+
+      const label = document.createElement('span');
+      label.textContent = option.label;
+
+      button.appendChild(mark);
+      button.appendChild(label);
+
+      // 若该题已有答案，恢复高亮
+      if (answers[currentQuestion + 1] === option.key) {
+        button.classList.add('selected');
+      }
+
+      button.addEventListener('click', function () {
+        selectOption(option.key);
+      });
+
+      optionsEl.appendChild(button);
+    });
+
+    // 返回按钮：第一题时禁用
+    backBtn.disabled = currentQuestion === 0;
+
+    // 第三题选完后显示“查看结果”按钮，其余情况隐藏
+    const showResultBtn = currentQuestion === 2 && answers[3] !== null;
+    resultActionEl.hidden = !showResultBtn;
+  }
+
+  // 选择某个选项
+  function selectOption(key) {
+    answers[currentQuestion + 1] = key;
+
+    // 高亮当前选项
+    const allOptions = optionsEl.querySelectorAll('.option');
+    allOptions.forEach(function (btn) {
+      btn.classList.toggle('selected', btn.dataset.key === key);
+    });
+
+    // 第三题选完：显示“查看结果”，不自动跳转
+    if (currentQuestion === 2) {
+      resultActionEl.hidden = false;
+      return;
+    }
+
+    // 前两题选完：自动进入下一题（稍作延迟以展示选中反馈）
+    setTimeout(function () {
+      currentQuestion += 1;
+      renderQuestion();
+    }, 250);
+  }
+
+  // 返回上一题修改
+  function goBack() {
+    if (currentQuestion === 0) return;
+    currentQuestion -= 1;
+    renderQuestion();
+  }
+
+  // 计分并映射结果（在点击“查看结果”时执行，不在选择时提前泄露）
+  function computeResult() {
+    const counts = { A: 0, B: 0, C: 0 };
+    for (const q in answers) {
+      const choice = answers[q];
+      if (choice) counts[choice] += 1;
+    }
+
+    // 找出最多票数的选项
+    const keys = ['A', 'B', 'C'];
+    let maxCount = -1;
+    const topKeys = [];
+    keys.forEach(function (k) {
+      if (counts[k] > maxCount) {
+        maxCount = counts[k];
+        topKeys.length = 0;
+        topKeys.push(k);
+      } else if (counts[k] === maxCount) {
+        topKeys.push(k);
+      }
+    });
+
+    let winningKey;
+    if (topKeys.length === 1) {
+      winningKey = topKeys[0];
+    } else {
+      // 平票时以第 1 题的选择为准
+      winningKey = answers[1];
+    }
+
+    // A -> 1, B -> 2, C -> 3
+    const resultId = { A: 1, B: 2, C: 3 }[winningKey];
+    return results[resultId];
+  }
+
+  // 展示结果页
+  function showResult() {
+    const result = computeResult();
+    resultTitleEl.textContent = result.title;
+    resultDescEl.textContent = result.desc;
+    showScreen('result');
+  }
+
+  // 再测一次：重置状态回到首屏
+  function resetTest() {
+    answers[1] = null;
+    answers[2] = null;
+    answers[3] = null;
+    currentQuestion = 0;
+    showScreen('start');
+  }
+
+  // 绑定事件
+  document.getElementById('btn-start').addEventListener('click', function () {
+    showScreen('quiz');
+    renderQuestion();
+  });
+
+  backBtn.addEventListener('click', goBack);
+
+  document.getElementById('btn-result').addEventListener('click', showResult);
+
+  document.getElementById('btn-retry').addEventListener('click', resetTest);
+</script>
+</body>
+</html>
