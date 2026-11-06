@@ -222,7 +222,6 @@
     font-size: 1rem;
     line-height: 1.9;
     color: #3c3c3c;
-    text-align: left;
     margin-bottom: 20px;
   }
   .result-closer {
@@ -253,7 +252,7 @@
   <section id="screen-start" class="screen active">
     <div class="hero">
       <h1>你此刻像哪个少年古人</h1>
-      <p class="subtitle">3 道题，30 秒</p>
+      <p class="subtitle">12 道题，约 1 分钟</p>
       <!-- 付费提示：首屏清晰可见，不藏在按钮后 -->
       <p class="pay-hint">本测试结果需支付 0.99 元解锁。付款后自动获得测试链接。</p>
       <button id="btn-start" class="btn btn-primary" type="button">开始测试</button>
@@ -264,7 +263,7 @@
   <section id="screen-quiz" class="screen">
     <div class="quiz-header">
       <button id="btn-back" class="back-btn" type="button" aria-label="返回上一题">← 上一题</button>
-      <span id="progress" class="progress">1 / 3</span>
+      <span id="progress" class="progress">1 / 12</span>
     </div>
     <h2 id="question-text" class="question-text"></h2>
     <div id="options" class="options"></div>
@@ -290,57 +289,172 @@
 </div>
 
 <script>
-  // 三道题目的数据
+  // 12 道题，每题三个选项，A=2 分、B=1 分、C=0 分。
+  // dim 字段表示该题所属维度（0~5），与 results 数组下标对应。
   const questions = [
+    // 维度 0：隐忍蓄力
     {
+      dim: 0,
       text: '最近一次你咽下一句话没说出来，是因为什么？',
       options: [
-        { key: 'A', label: '怕说出来后果更糟' },
-        { key: 'B', label: '觉得说了也没用' },
-        { key: 'C', label: '在等一个说了有用的时机' }
+        { key: 'A', label: '怕说出来后果更糟', score: 2 },
+        { key: 'B', label: '觉得说了也没用', score: 1 },
+        { key: 'C', label: '你一般不会咽，当场就说了', score: 0 }
       ]
     },
     {
-      text: '你手机里最近一条写了又删的消息，更接近哪一种？',
+      dim: 0,
+      text: '当你被人故意忽视时，你更可能：',
       options: [
-        { key: 'A', label: '一句质问' },
-        { key: 'B', label: '一句试探' },
-        { key: 'C', label: '一句告别' }
+        { key: 'A', label: '不抬头，把情绪收起来', score: 2 },
+        { key: 'B', label: '表面没事，心里记着', score: 1 },
+        { key: 'C', label: '直接问对方什么意思', score: 0 }
+      ]
+    },
+    // 维度 1：愤怒未发
+    {
+      dim: 1,
+      text: '你心里那团火最近一次烧起来，是因为什么？',
+      options: [
+        { key: 'A', label: '被人当众否定，但你忍住了', score: 2 },
+        { key: 'B', label: '一件小事反复被踩，你还没发作', score: 1 },
+        { key: 'C', label: '你很少压火，一般当场就发', score: 0 }
       ]
     },
     {
-      text: '如果此刻的情绪有形状，它更像什么？',
+      dim: 1,
+      text: '如果愤怒有形状，你此刻的更像：',
       options: [
-        { key: 'A', label: '压在胸口的石头' },
-        { key: 'B', label: '烧到一半的火' },
-        { key: 'C', label: '关不紧的水龙头' }
+        { key: 'A', label: '烧到一半被你按住的火', score: 2 },
+        { key: 'B', label: '闷在灰里的炭', score: 1 },
+        { key: 'C', label: '你不太容易生气，觉得没必要争', score: 0 }
+      ]
+    },
+    // 维度 2：不确定外走
+    {
+      dim: 2,
+      text: '想到未来几个月，你更常感到：',
+      options: [
+        { key: 'A', label: '兴奋里有点没底', score: 2 },
+        { key: 'B', label: '走一步看一步', score: 1 },
+        { key: 'C', label: '不太想未来，先过好现在', score: 0 }
+      ]
+    },
+    {
+      dim: 2,
+      text: '你最近一次离开熟悉的地方或圈子，是因为：',
+      options: [
+        { key: 'A', label: '想出去看看，虽然不知道会怎样', score: 2 },
+        { key: 'B', label: '不得不走，心里没底', score: 1 },
+        { key: 'C', label: '还没想过离开', score: 0 }
+      ]
+    },
+    // 维度 3：格格不入
+    {
+      dim: 3,
+      text: '在人群里，你更常觉得：',
+      options: [
+        { key: 'A', label: '自己跟周围不太一样，但不打算改', score: 2 },
+        { key: 'B', label: '有时格格不入，但会试着融入', score: 1 },
+        { key: 'C', label: '大部分时候挺自在的', score: 0 }
+      ]
+    },
+    {
+      dim: 3,
+      text: '当你喜欢的东西和别人不一样时，你：',
+      options: [
+        { key: 'A', label: '自己坚持，不解释', score: 2 },
+        { key: 'B', label: '看情况，有时会藏起来', score: 1 },
+        { key: 'C', label: '会跟着大家，不想显得特别', score: 0 }
+      ]
+    },
+    // 维度 4：告别失去
+    {
+      dim: 4,
+      text: '你最近一次和重要的人分开，更接近：',
+      options: [
+        { key: 'A', label: '没好好说再见，一直搁着', score: 2 },
+        { key: 'B', label: '说了再见，但还会反复想', score: 1 },
+        { key: 'C', label: '分开了就往前走了', score: 0 }
+      ]
+    },
+    {
+      dim: 4,
+      text: '你手机里有没有一个不会再联系但没删的对话框？',
+      options: [
+        { key: 'A', label: '有，偶尔会翻到', score: 2 },
+        { key: 'B', label: '有，但已经不在意了', score: 1 },
+        { key: 'C', label: '没有，删得很干净', score: 0 }
+      ]
+    },
+    // 维度 5：等待时机
+    {
+      dim: 5,
+      text: '你现在更接近哪种状态？',
+      options: [
+        { key: 'A', label: '在等一个合适的时机再行动', score: 2 },
+        { key: 'B', label: '在准备，但不确定什么时候算准备好', score: 1 },
+        { key: 'C', label: '想到就去做，不太等', score: 0 }
+      ]
+    },
+    {
+      dim: 5,
+      text: '面对一个你想要但还没得到的东西，你：',
+      options: [
+        { key: 'A', label: '愿意等，觉得时机没到', score: 2 },
+        { key: 'B', label: '会试探着往前挪', score: 1 },
+        { key: 'C', label: '等不了，要么现在要，要么不要', score: 0 }
       ]
     }
   ];
 
-  // 三个结果文案（原样使用，不改写）
-  const results = {
-    1: {
-      title: '少年嬴政 · 邯郸为质 · 屈辱下的沉默蓄力',
-      desc: '十三岁在邯郸，嬴政还不是后来的秦始皇。有人故意让他听见那些话，他学会了不抬头。你最近咽下去的那句话，大概也不轻。咽下去不代表没事，只是你知道，现在说出来，接不住的人比能接住的人多。'
-    },
-    2: {
-      title: '少年韩信 · 胯下之辱 · 愤怒被更大的目标压住',
-      desc: '韩信从那个人胯下爬过去的时候，旁边的人在笑。他后来再没提过这件事。你心里那团火没烧完，可能不是熄了，是你自己按住的。按住它挺累的，累就累吧，有些人就是这样往前走了一段。'
-    },
-    3: {
-      title: '少年苏轼 · 首次出川 · 兴奋里藏着不确定',
-      desc: '苏轼二十岁出眉山，船越走越远，他大概是高兴的，但高兴里也有点没底。你手机里那条写了又删的消息，不一定是多大的事，但就是一直搁在那儿。搁着就搁着，不用急着删，也不用急着发。'
-    }
-  };
+  // 6 个维度名称（顺序即平票时的取序）
+  const dimensions = [
+    '隐忍蓄力',
+    '愤怒未发',
+    '不确定外走',
+    '格格不入',
+    '告别失去',
+    '等待时机'
+  ];
 
-  // 状态管理：用一个对象保存三道题的答案，支持返回修改后重新计算
-  const answers = {
-    1: null,
-    2: null,
-    3: null
-  };
-  let currentQuestion = 0; // 当前题目索引（0~2）
+  // 18 个结果：results[维度][挡位]，挡位 high=高 / mid=中 / low=低
+  const results = [
+    { // 隐忍蓄力
+      high: { title: '少年嬴政 · 邯郸为质 · 屈辱下的沉默蓄力', desc: '他学会了不抬头。' },
+      mid:  { title: '少年韩信 · 胯下之辱 · 愤怒被更大的目标压住', desc: '他从人胯下爬过去，没说话。' },
+      low:  { title: '少年刘秀 · 兄长遇害后的沉默', desc: '他哭完，把事压在心里。' }
+    },
+    { // 愤怒未发
+      high: { title: '少年项羽 · 见始皇出游 · 那句话被叔父捂了回去', desc: '他被叔父捂住嘴，那句话咽了回去。' },
+      mid:  { title: '少年张良 · 博浪沙之后 · 锤子砸偏了，他开始等', desc: '锤子砸偏了，他开始等。' },
+      low:  { title: '少年荆轲 · 与人论剑不争 · 别人骂他，他转身走了', desc: '别人骂他，他转身走了。' }
+    },
+    { // 不确定外走
+      high: { title: '少年苏轼 · 首次出川 · 兴奋里藏着不确定', desc: '船越走越远，他高兴，也有点没底。' },
+      mid:  { title: '少年李白 · 初出蜀地 · 带着剑和钱，不知道前面是什么', desc: '他带着剑和钱，不知道前面是什么。' },
+      low:  { title: '少年杜甫 · 漫游齐赵之间 · 还没想好要去哪', desc: '他还没想好要去哪。' }
+    },
+    { // 格格不入
+      high: { title: '少年嵇康 · 不随流俗 · 不打算跟别人一样', desc: '他不打算跟别人一样。' },
+      mid:  { title: '少年李清照 · 初入汴京 · 写的东西和周围人不太一样', desc: '她写的东西，和周围人不太一样。' },
+      low:  { title: '少年贾谊 · 才高遭忌 · 太早被看见，还不知道怎么收', desc: '他太早被看见，还不知道怎么收。' }
+    },
+    { // 告别失去
+      high: { title: '少年纳兰 · 丧妻之后 · 写了很多词，但人回不来', desc: '他写了很多词，但人回不来。' },
+      mid:  { title: '少年曹植 · 与友离散 · 酒还在，人散了', desc: '酒还在，人散了。' },
+      low:  { title: '少年陆游 · 沈园旧事之前 · 还没写下那首词', desc: '他还没写下那首词。' }
+    },
+    { // 等待时机
+      high: { title: '少年诸葛亮 · 隆中躬耕 · 在地里等一个能接住他的人', desc: '他在地里等，等一个能接住他的人。' },
+      mid:  { title: '少年谢安 · 东山不出 · 别人请他做官，他还在看', desc: '别人请他做官，他还在看。' },
+      low:  { title: '少年王猛 · 卖畚箕于市 · 在市集上等一个识货的', desc: '他在市集上卖畚箕，等一个识货的。' }
+    }
+  ];
+
+  // 状态管理：用一个对象保存 12 道题的答案，支持返回修改后重新计算
+  const answers = {};
+  let currentQuestion = 0; // 当前题目索引（0~11）
 
   // 获取 DOM 元素
   const screenStart = document.getElementById('screen-start');
@@ -365,7 +479,7 @@
   function renderQuestion() {
     const question = questions[currentQuestion];
     questionTextEl.textContent = question.text;
-    progressEl.textContent = (currentQuestion + 1) + ' / 3';
+    progressEl.textContent = (currentQuestion + 1) + ' / ' + questions.length;
 
     // 渲染选项
     optionsEl.innerHTML = '';
@@ -400,8 +514,9 @@
     // 返回按钮：第一题时禁用
     backBtn.disabled = currentQuestion === 0;
 
-    // 第三题选完后显示“查看结果”按钮，其余情况隐藏
-    const showResultBtn = currentQuestion === 2 && answers[3] !== null;
+    // 最后一题选完后显示“查看结果”按钮，其余情况隐藏
+    const isLast = currentQuestion === questions.length - 1;
+    const showResultBtn = isLast && answers[questions.length] !== undefined && answers[questions.length] !== null;
     resultActionEl.hidden = !showResultBtn;
   }
 
@@ -415,13 +530,13 @@
       btn.classList.toggle('selected', btn.dataset.key === key);
     });
 
-    // 第三题选完：显示“查看结果”，不自动跳转
-    if (currentQuestion === 2) {
+    // 最后一题选完：显示“查看结果”，不自动跳转
+    if (currentQuestion === questions.length - 1) {
       resultActionEl.hidden = false;
       return;
     }
 
-    // 前两题选完：自动进入下一题（稍作延迟以展示选中反馈）
+    // 其余题目选完：自动进入下一题（稍作延迟以展示选中反馈）
     setTimeout(function () {
       currentQuestion += 1;
       renderQuestion();
@@ -437,37 +552,36 @@
 
   // 计分并映射结果（在点击“查看结果”时执行，不在选择时提前泄露）
   function computeResult() {
-    const counts = { A: 0, B: 0, C: 0 };
-    for (const q in answers) {
-      const choice = answers[q];
-      if (choice) counts[choice] += 1;
-    }
-
-    // 找出最多票数的选项
-    const keys = ['A', 'B', 'C'];
-    let maxCount = -1;
-    const topKeys = [];
-    keys.forEach(function (k) {
-      if (counts[k] > maxCount) {
-        maxCount = counts[k];
-        topKeys.length = 0;
-        topKeys.push(k);
-      } else if (counts[k] === maxCount) {
-        topKeys.push(k);
-      }
+    // 计算 6 个维度总分（每个维度 2 题，满分 4 分）
+    const scores = [0, 0, 0, 0, 0, 0];
+    questions.forEach(function (question, index) {
+      const choice = answers[index + 1];
+      if (!choice) return;
+      const option = question.options.find(function (o) { return o.key === choice; });
+      scores[question.dim] += option.score;
     });
 
-    let winningKey;
-    if (topKeys.length === 1) {
-      winningKey = topKeys[0];
-    } else {
-      // 平票时以第 1 题的选择为准
-      winningKey = answers[1];
+    // 取最高分维度；平票时按维度顺序取靠前者（数组从左到右首次最大）
+    let bestDim = 0;
+    let bestScore = scores[0];
+    for (let d = 1; d < dimensions.length; d++) {
+      if (scores[d] > bestScore) {
+        bestScore = scores[d];
+        bestDim = d;
+      }
     }
 
-    // A -> 1, B -> 2, C -> 3
-    const resultId = { A: 1, B: 2, C: 3 }[winningKey];
-    return results[resultId];
+    // 4 或 3 → 高挡；2 → 中挡；0 或 1 → 低挡
+    let tier;
+    if (bestScore >= 3) {
+      tier = 'high';
+    } else if (bestScore === 2) {
+      tier = 'mid';
+    } else {
+      tier = 'low';
+    }
+
+    return results[bestDim][tier];
   }
 
   // 展示结果页
@@ -480,9 +594,9 @@
 
   // 再测一次：重置状态回到首屏
   function resetTest() {
-    answers[1] = null;
-    answers[2] = null;
-    answers[3] = null;
+    for (const key in answers) {
+      delete answers[key];
+    }
     currentQuestion = 0;
     showScreen('start');
   }
